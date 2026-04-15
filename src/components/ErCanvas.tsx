@@ -24,8 +24,10 @@ interface ErCanvasInnerProps {
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
+  borderWidth: number
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onBorderWidthChange: (width: number) => void
 }
 
 function ErCanvasInner({
@@ -33,8 +35,10 @@ function ErCanvasInner({
   initialEdges,
   fontSize,
   cardWidth,
+  borderWidth,
   onFontSizeChange,
   onCardWidthChange,
+  onBorderWidthChange,
 }: ErCanvasInnerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -42,9 +46,9 @@ function ErCanvasInner({
     () =>
       initialNodes.map((node) => ({
         ...node,
-        data: { ...node.data, fontSize, cardWidth },
+        data: { ...node.data, fontSize, cardWidth, borderWidth },
       })),
-    [initialNodes, fontSize, cardWidth]
+    [initialNodes, fontSize, cardWidth, borderWidth]
   )
 
   const [nodes, , onNodesChange] = useNodesState(nodesWithStyle)
@@ -63,8 +67,10 @@ function ErCanvasInner({
       <Toolbar
         fontSize={fontSize}
         cardWidth={cardWidth}
+        borderWidth={borderWidth}
         onFontSizeChange={onFontSizeChange}
         onCardWidthChange={onCardWidthChange}
+        onBorderWidthChange={onBorderWidthChange}
         onExport={handleExport}
       />
       <div ref={wrapperRef} className="flex-1">
@@ -94,8 +100,10 @@ interface ErCanvasProps {
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
+  borderWidth: number
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onBorderWidthChange: (width: number) => void
 }
 
 export function ErCanvas(props: ErCanvasProps) {

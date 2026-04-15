@@ -34,5 +34,6 @@ export interface TableNodeData {
   columns: ParsedColumn[]
   fontSize: number
   cardWidth: number
+  borderWidth: number
   [key: string]: unknown
 }

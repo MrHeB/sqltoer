@@ -3,12 +3,12 @@ import type { NodeProps } from "@xyflow/react"
 import type { TableNodeData } from "@/types"
 
 export function TableNode({ data }: NodeProps) {
-  const { tableName, columns, fontSize, cardWidth } = data as TableNodeData
+  const { tableName, columns, fontSize, cardWidth, borderWidth } = data as TableNodeData
 
   return (
     <div
-      className="rounded-lg border border-border bg-card shadow-md overflow-hidden"
-      style={{ width: cardWidth, fontSize }}
+      className="rounded-lg bg-card shadow-md overflow-hidden"
+      style={{ width: cardWidth, fontSize, borderWidth, borderColor: "var(--color-border)" }}
     >
       <div className="bg-primary text-primary-foreground px-3 py-2 font-semibold text-center">
         {tableName}

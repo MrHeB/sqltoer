@@ -1,50 +1,79 @@
-import { Slider } from "@/components/ui/slider"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
 interface ToolbarProps {
   fontSize: number
   cardWidth: number
+  borderWidth: number
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onBorderWidthChange: (width: number) => void
   onExport: (format: "png" | "svg") => void
 }
 
 export function Toolbar({
   fontSize,
   cardWidth,
+  borderWidth,
   onFontSizeChange,
   onCardWidthChange,
+  onBorderWidthChange,
   onExport,
 }: ToolbarProps) {
   return (
     <div className="flex items-center gap-4 border-b border-border bg-background px-4 py-2">
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground whitespace-nowrap">字号</span>
-        <Slider
-          value={[fontSize]}
-          min={10}
-          max={20}
-          step={1}
-          onValueChange={(v) => onFontSizeChange(Array.isArray(v) ? v[0] : v)}
-          className="w-24"
+        <Input
+          type="number"
+          min={8}
+          max={32}
+          value={fontSize}
+          onChange={(e) => {
+            const v = parseInt(e.target.value)
+            if (!isNaN(v) && v >= 8 && v <= 32) onFontSizeChange(v)
+          }}
+          className="w-16 h-7 text-xs text-center"
         />
-        <span className="text-xs tabular-nums w-8">{fontSize}px</span>
+        <span className="text-xs text-muted-foreground">px</span>
       </div>
 
       <Separator orientation="vertical" className="h-4" />
 
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground whitespace-nowrap">卡片宽度</span>
-        <Slider
-          value={[cardWidth]}
-          min={150}
-          max={400}
+        <Input
+          type="number"
+          min={100}
+          max={600}
           step={10}
-          onValueChange={(v) => onCardWidthChange(Array.isArray(v) ? v[0] : v)}
-          className="w-24"
+          value={cardWidth}
+          onChange={(e) => {
+            const v = parseInt(e.target.value)
+            if (!isNaN(v) && v >= 100 && v <= 600) onCardWidthChange(v)
+          }}
+          className="w-16 h-7 text-xs text-center"
         />
-        <span className="text-xs tabular-nums w-10">{cardWidth}px</span>
+        <span className="text-xs text-muted-foreground">px</span>
+      </div>
+
+      <Separator orientation="vertical" className="h-4" />
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">框线粗细</span>
+        <Input
+          type="number"
+          min={0}
+          max={6}
+          value={borderWidth}
+          onChange={(e) => {
+            const v = parseInt(e.target.value)
+            if (!isNaN(v) && v >= 0 && v <= 6) onBorderWidthChange(v)
+          }}
+          className="w-16 h-7 text-xs text-center"
+        />
+        <span className="text-xs text-muted-foreground">px</span>
       </div>
 
       <Separator orientation="vertical" className="h-4" />

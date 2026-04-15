@@ -8,6 +8,7 @@ export default function App() {
   const { schema, error, parse } = useSqlParser()
   const [fontSize, setFontSize] = useState(13)
   const [cardWidth, setCardWidth] = useState(250)
+  const [borderWidth, setBorderWidth] = useState(1)
 
   const { nodes, edges } = useMemo(
     () => (schema ? schemaToElements(schema, fontSize, cardWidth) : { nodes: [], edges: [] }),
@@ -44,8 +45,10 @@ export default function App() {
             initialEdges={edges}
             fontSize={fontSize}
             cardWidth={cardWidth}
+            borderWidth={borderWidth}
             onFontSizeChange={setFontSize}
             onCardWidthChange={setCardWidth}
+            onBorderWidthChange={setBorderWidth}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">

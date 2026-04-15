@@ -4,11 +4,13 @@ import { applyAutoLayout } from "@/lib/auto-layout"
 
 const DEFAULT_FONT_SIZE = 13
 const DEFAULT_CARD_WIDTH = 250
+const DEFAULT_BORDER_WIDTH = 1
 
 export function schemaToElements(
   schema: ParsedSchema,
   fontSize: number = DEFAULT_FONT_SIZE,
-  cardWidth: number = DEFAULT_CARD_WIDTH
+  cardWidth: number = DEFAULT_CARD_WIDTH,
+  borderWidth: number = DEFAULT_BORDER_WIDTH
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = schema.tables.map((table) => ({
     id: table.name,
@@ -19,6 +21,7 @@ export function schemaToElements(
       columns: table.columns,
       fontSize,
       cardWidth,
+      borderWidth,
     } satisfies TableNodeData,
   }))
 
