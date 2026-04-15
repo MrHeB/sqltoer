@@ -2,8 +2,12 @@ import { Handle, Position } from "@xyflow/react"
 import type { NodeProps } from "@xyflow/react"
 import type { TableNodeData } from "@/types"
 
+const POSITIONS: Position[] = [Position.Top, Position.Right, Position.Bottom, Position.Left]
+
 export function TableNode({ data }: NodeProps) {
   const { tableName, columns, fontSize, cardWidth, borderWidth } = data as TableNodeData
+
+  const connectedColumns = columns.filter((c) => c.isPrimaryKey || c.isForeignKey)
 
   return (
     <div
@@ -32,44 +36,24 @@ export function TableNode({ data }: NodeProps) {
         ))}
       </div>
 
-      {columns.map((col) => {
-        const handles = []
-
-        if (col.isPrimaryKey) {
-          handles.push(
-            <Handle
-              key={`pk-${col.name}`}
-              type="source"
-              position={Position.Right}
-              id={`source-${col.name}`}
-              className="!w-2 !h-2 !bg-amber-500"
-            />
-          )
-          handles.push(
-            <Handle
-              key={`pk-target-${col.name}`}
-              type="target"
-              position={Position.Left}
-              id={`target-${col.name}`}
-              className="!w-2 !h-2 !bg-amber-500"
-            />
-          )
-        }
-
-        if (col.isForeignKey) {
-          handles.push(
-            <Handle
-              key={`fk-${col.name}`}
-              type="source"
-              position={Position.Left}
-              id={`source-${col.name}`}
-              className="!w-2 !h-2 !bg-blue-500"
-            />
-          )
-        }
-
-        return handles
-      })}
+      {connectedColumns.map((col) =>
+        POSITIONS.map((pos) => [
+          <Handle
+            key={`source-${col.name}-${pos}`}
+            type="source"
+            position={pos}
+            id={`source-${col.name}-${pos}`}
+            className="!w-2 !h-2 !bg-blue-500"
+          />,
+          <Handle
+            key={`target-${col.name}-${pos}`}
+            type="target"
+            position={pos}
+            id={`target-${col.name}-${pos}`}
+            className="!w-2 !h-2 !bg-amber-500"
+          />,
+        ])
+      )}
     </div>
   )
 }

@@ -29,8 +29,6 @@ export function schemaToElements(
     id: rel.id,
     source: rel.sourceTable,
     target: rel.targetTable,
-    sourceHandle: `source-${rel.sourceColumn}`,
-    targetHandle: `target-${rel.targetColumn}`,
     type: "relationEdge",
     data: { label: rel.type, sourceColumn: rel.sourceColumn, targetColumn: rel.targetColumn },
   }))
