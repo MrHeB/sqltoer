@@ -52,8 +52,8 @@ export default function App() {
         {schema ? (
           <ErCanvas
             mode={mode}
-            initialNodes={nodes}
-            initialEdges={edges}
+            nodes={nodes}
+            edges={edges}
             fontSize={fontSize}
             cardWidth={cardWidth}
             borderWidth={borderWidth}

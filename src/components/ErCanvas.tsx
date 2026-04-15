@@ -1,12 +1,10 @@
-import { useCallback, useRef, useMemo } from "react"
+import { useCallback, useRef } from "react"
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useNodesState,
-  useEdgesState,
 } from "@xyflow/react"
 import type { Node, Edge } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
@@ -19,14 +17,21 @@ import { ChenRelationshipNode } from "@/components/chen/ChenRelationshipNode"
 import { Toolbar, type ErMode } from "@/components/Toolbar"
 import { exportDiagram } from "@/lib/export"
 
-const relationalNodeTypes = { tableNode: TableNode }
-const relationalEdgeTypes = { relationEdge: RelationEdge }
-const chenNodeTypes = { chenEntity: ChenEntityNode, chenAttribute: ChenAttributeNode, chenRelationship: ChenRelationshipNode }
+const nodeTypes = {
+  tableNode: TableNode,
+  chenEntity: ChenEntityNode,
+  chenAttribute: ChenAttributeNode,
+  chenRelationship: ChenRelationshipNode,
+}
+
+const edgeTypes = {
+  relationEdge: RelationEdge,
+}
 
 interface ErCanvasInnerProps {
   mode: ErMode
-  initialNodes: Node[]
-  initialEdges: Edge[]
+  nodes: Node[]
+  edges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
@@ -38,8 +43,8 @@ interface ErCanvasInnerProps {
 
 function ErCanvasInner({
   mode,
-  initialNodes,
-  initialEdges,
+  nodes,
+  edges,
   fontSize,
   cardWidth,
   borderWidth,
@@ -49,21 +54,6 @@ function ErCanvasInner({
   onBorderWidthChange,
 }: ErCanvasInnerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
-
-  const nodesWithStyle = useMemo(
-    () =>
-      initialNodes.map((node) => ({
-        ...node,
-        data: { ...node.data, fontSize, cardWidth, borderWidth },
-      })),
-    [initialNodes, fontSize, cardWidth, borderWidth]
-  )
-
-  const [nodes, , onNodesChange] = useNodesState(nodesWithStyle)
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges)
-
-  const nodeTypes = mode === "chen" ? chenNodeTypes : relationalNodeTypes
-  const edgeTypes = mode === "chen" ? undefined : relationalEdgeTypes
 
   const handleExport = useCallback(
     async (format: "png" | "svg") => {
@@ -88,10 +78,9 @@ function ErCanvasInner({
       />
       <div ref={wrapperRef} className="flex-1">
         <ReactFlow
+          key={mode}
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
@@ -110,8 +99,8 @@ function ErCanvasInner({
 
 interface ErCanvasProps {
   mode: ErMode
-  initialNodes: Node[]
-  initialEdges: Edge[]
+  nodes: Node[]
+  edges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
