@@ -131,9 +131,11 @@ function ErCanvasInner({
           <Controls />
           <MiniMap pannable zoomable />
           <div
-            className="pointer-events-none absolute bottom-3 right-4 z-10 text-xs text-muted-foreground/40 select-none"
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center select-none"
           >
-            联系作者：1687050390@qq.com
+            <span className="text-3xl font-bold text-muted-foreground/20 whitespace-nowrap">
+              联系作者：1687050390@qq.com
+            </span>
           </div>
         </ReactFlow>
       </div>
