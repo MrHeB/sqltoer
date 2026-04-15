@@ -13,6 +13,7 @@ export default function App() {
   const [cardWidth, setCardWidth] = useState(250)
   const [attrSize, setAttrSize] = useState(80)
   const [borderWidth, setBorderWidth] = useState(1)
+  const [edgeWidth, setEdgeWidth] = useState(1.5)
 
   const relationalElements = useMemo(
     () => (schema ? schemaToElements(schema, fontSize, cardWidth, borderWidth) : { nodes: [], edges: [] }),
@@ -59,11 +60,13 @@ export default function App() {
             cardWidth={cardWidth}
             attrSize={attrSize}
             borderWidth={borderWidth}
+            edgeWidth={edgeWidth}
             onModeChange={setMode}
             onFontSizeChange={setFontSize}
             onCardWidthChange={setCardWidth}
             onAttrSizeChange={setAttrSize}
             onBorderWidthChange={setBorderWidth}
+            onEdgeWidthChange={setEdgeWidth}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">

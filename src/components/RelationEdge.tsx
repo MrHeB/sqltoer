@@ -23,7 +23,7 @@ export function RelationEdge({
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} className="!stroke-muted-foreground !stroke-1.5" />
+      <BaseEdge id={id} path={edgePath} style={{ strokeWidth: Number(data?.edgeWidth) || 1.5 }} className="!stroke-muted-foreground" />
       <EdgeLabelRenderer>
         <div
           className="pointer-events-none absolute rounded bg-background border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm"

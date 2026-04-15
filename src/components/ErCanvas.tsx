@@ -38,11 +38,13 @@ interface ErCanvasInnerProps {
   cardWidth: number
   attrSize: number
   borderWidth: number
+  edgeWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
   onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
+  onEdgeWidthChange: (width: number) => void
 }
 
 function ErCanvasInner({
@@ -53,18 +55,20 @@ function ErCanvasInner({
   cardWidth,
   attrSize,
   borderWidth,
+  edgeWidth,
   onModeChange,
   onFontSizeChange,
   onCardWidthChange,
   onAttrSizeChange,
   onBorderWidthChange,
+  onEdgeWidthChange,
 }: ErCanvasInnerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
-  // Update node data (fontSize, cardWidth, borderWidth) without resetting positions
+  // Update node data without resetting positions
   useEffect(() => {
     setNodes((nds) =>
       nds.map((n) => ({
@@ -73,6 +77,17 @@ function ErCanvasInner({
       }))
     )
   }, [fontSize, cardWidth, attrSize, borderWidth, setNodes])
+
+  // Update edge data (edgeWidth) and style
+  useEffect(() => {
+    setEdges((eds) =>
+      eds.map((e) => ({
+        ...e,
+        data: { ...e.data, edgeWidth },
+        style: { ...e.style, strokeWidth: edgeWidth },
+      }))
+    )
+  }, [edgeWidth, setEdges])
 
   const handleExport = useCallback(
     async (format: "png" | "svg") => {
@@ -90,11 +105,13 @@ function ErCanvasInner({
         cardWidth={cardWidth}
         attrSize={attrSize}
         borderWidth={borderWidth}
+        edgeWidth={edgeWidth}
         onModeChange={onModeChange}
         onFontSizeChange={onFontSizeChange}
         onCardWidthChange={onCardWidthChange}
         onAttrSizeChange={onAttrSizeChange}
         onBorderWidthChange={onBorderWidthChange}
+        onEdgeWidthChange={onEdgeWidthChange}
         onExport={handleExport}
       />
       <div ref={wrapperRef} className="flex-1">
@@ -127,17 +144,18 @@ interface ErCanvasProps {
   cardWidth: number
   attrSize: number
   borderWidth: number
+  edgeWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
   onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
+  onEdgeWidthChange: (width: number) => void
 }
 
 export function ErCanvas(props: ErCanvasProps) {
   return (
     <ReactFlowProvider>
-      {/* key={mode} ensures full remount on mode switch so useNodesState reinitializes */}
       <ErCanvasInner key={props.mode} {...props} />
     </ReactFlowProvider>
   )

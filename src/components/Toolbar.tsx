@@ -10,11 +10,13 @@ interface ToolbarProps {
   cardWidth: number
   attrSize: number
   borderWidth: number
+  edgeWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
   onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
+  onEdgeWidthChange: (width: number) => void
   onExport: (format: "png" | "svg") => void
 }
 
@@ -24,11 +26,13 @@ export function Toolbar({
   cardWidth,
   attrSize,
   borderWidth,
+  edgeWidth,
   onModeChange,
   onFontSizeChange,
   onCardWidthChange,
   onAttrSizeChange,
   onBorderWidthChange,
+  onEdgeWidthChange,
   onExport,
 }: ToolbarProps) {
   return (
@@ -110,6 +114,25 @@ export function Toolbar({
           onChange={(e) => {
             const v = parseInt(e.target.value)
             if (!isNaN(v) && v >= 0 && v <= 6) onBorderWidthChange(v)
+          }}
+          className="w-16 h-7 text-xs text-center"
+        />
+        <span className="text-xs text-muted-foreground">px</span>
+      </div>
+
+      <Separator orientation="vertical" className="h-4" />
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">连线粗细</span>
+        <Input
+          type="number"
+          min={0}
+          max={6}
+          step={0.5}
+          value={edgeWidth}
+          onChange={(e) => {
+            const v = parseFloat(e.target.value)
+            if (!isNaN(v) && v >= 0 && v <= 6) onEdgeWidthChange(v)
           }}
           className="w-16 h-7 text-xs text-center"
         />
