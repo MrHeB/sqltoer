@@ -4,18 +4,19 @@ import type { NodeProps } from "@xyflow/react"
 interface ChenEntityData {
   tableName: string
   fontSize: number
+  cardWidth: number
   borderWidth: number
   [key: string]: unknown
 }
 
 export function ChenEntityNode({ data }: NodeProps) {
-  const { tableName, fontSize, borderWidth } = data as ChenEntityData
+  const { tableName, fontSize, cardWidth, borderWidth } = data as ChenEntityData
 
   return (
     <div
       className="bg-card flex items-center justify-center font-semibold"
       style={{
-        width: 120,
+        width: cardWidth || 120,
         height: 50,
         borderWidth,
         borderStyle: "solid",

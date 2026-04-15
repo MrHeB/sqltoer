@@ -21,6 +21,7 @@ function getDirection(fromX: number, fromY: number, toX: number, toY: number): D
 export function schemaToChenElements(
   schema: ParsedSchema,
   fontSize: number,
+  cardWidth: number,
   borderWidth: number
 ): { nodes: Node[]; edges: Edge[] } {
   const tableNameSet = new Set(schema.tables.map((t) => t.name))
@@ -34,7 +35,7 @@ export function schemaToChenElements(
   g.setDefaultEdgeLabel(() => ({}))
 
   for (const table of schema.tables) {
-    g.setNode(table.name, { width: ENTITY_W, height: ENTITY_H })
+    g.setNode(table.name, { width: cardWidth || ENTITY_W, height: ENTITY_H })
   }
   for (const rel of validRelations) {
     g.setEdge(rel.sourceTable, rel.targetTable)
@@ -51,13 +52,14 @@ export function schemaToChenElements(
     if (!dn) continue
     const cx = dn.x
     const cy = dn.y
+    const ew = cardWidth || ENTITY_W
     entityCenters.set(table.name, { x: cx, y: cy })
 
     nodes.push({
       id: `chen-e-${table.name}`,
       type: "chenEntity",
-      position: { x: cx - ENTITY_W / 2, y: cy - ENTITY_H / 2 },
-      data: { tableName: table.name, fontSize, borderWidth },
+      position: { x: cx - ew / 2, y: cy - ENTITY_H / 2 },
+      data: { tableName: table.name, fontSize, cardWidth: ew, borderWidth },
     })
   }
 

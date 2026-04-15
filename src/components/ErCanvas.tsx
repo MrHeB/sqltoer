@@ -1,10 +1,12 @@
-import { useCallback, useRef } from "react"
+import { useCallback, useRef, useEffect } from "react"
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   ReactFlowProvider,
+  useNodesState,
+  useEdgesState,
 } from "@xyflow/react"
 import type { Node, Edge } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
@@ -30,8 +32,8 @@ const edgeTypes = {
 
 interface ErCanvasInnerProps {
   mode: ErMode
-  nodes: Node[]
-  edges: Edge[]
+  initialNodes: Node[]
+  initialEdges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
@@ -43,8 +45,8 @@ interface ErCanvasInnerProps {
 
 function ErCanvasInner({
   mode,
-  nodes,
-  edges,
+  initialNodes,
+  initialEdges,
   fontSize,
   cardWidth,
   borderWidth,
@@ -54,6 +56,19 @@ function ErCanvasInner({
   onBorderWidthChange,
 }: ErCanvasInnerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges)
+
+  // Update node data (fontSize, cardWidth, borderWidth) without resetting positions
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: { ...n.data, fontSize, cardWidth, borderWidth },
+      }))
+    )
+  }, [fontSize, cardWidth, borderWidth, setNodes])
 
   const handleExport = useCallback(
     async (format: "png" | "svg") => {
@@ -78,9 +93,10 @@ function ErCanvasInner({
       />
       <div ref={wrapperRef} className="flex-1">
         <ReactFlow
-          key={mode}
           nodes={nodes}
           edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
@@ -99,8 +115,8 @@ function ErCanvasInner({
 
 interface ErCanvasProps {
   mode: ErMode
-  nodes: Node[]
-  edges: Edge[]
+  initialNodes: Node[]
+  initialEdges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
@@ -113,7 +129,8 @@ interface ErCanvasProps {
 export function ErCanvas(props: ErCanvasProps) {
   return (
     <ReactFlowProvider>
-      <ErCanvasInner {...props} />
+      {/* key={mode} ensures full remount on mode switch so useNodesState reinitializes */}
+      <ErCanvasInner key={props.mode} {...props} />
     </ReactFlowProvider>
   )
 }

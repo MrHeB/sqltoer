@@ -19,8 +19,8 @@ export default function App() {
   )
 
   const chenElements = useMemo(
-    () => (schema ? schemaToChenElements(schema, fontSize, borderWidth) : { nodes: [], edges: [] }),
-    [schema, fontSize, borderWidth]
+    () => (schema ? schemaToChenElements(schema, fontSize, cardWidth, borderWidth) : { nodes: [], edges: [] }),
+    [schema, fontSize, cardWidth, borderWidth]
   )
 
   const { nodes, edges } = mode === "chen" ? chenElements : relationalElements
@@ -52,8 +52,8 @@ export default function App() {
         {schema ? (
           <ErCanvas
             mode={mode}
-            nodes={nodes}
-            edges={edges}
+            initialNodes={nodes}
+            initialEdges={edges}
             fontSize={fontSize}
             cardWidth={cardWidth}
             borderWidth={borderWidth}
