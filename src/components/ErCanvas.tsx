@@ -13,29 +13,37 @@ import "@xyflow/react/dist/style.css"
 
 import { TableNode } from "@/components/TableNode"
 import { RelationEdge } from "@/components/RelationEdge"
-import { Toolbar } from "@/components/Toolbar"
+import { ChenEntityNode } from "@/components/chen/ChenEntityNode"
+import { ChenAttributeNode } from "@/components/chen/ChenAttributeNode"
+import { ChenRelationshipNode } from "@/components/chen/ChenRelationshipNode"
+import { Toolbar, type ErMode } from "@/components/Toolbar"
 import { exportDiagram } from "@/lib/export"
 
-const nodeTypes = { tableNode: TableNode }
-const edgeTypes = { relationEdge: RelationEdge }
+const relationalNodeTypes = { tableNode: TableNode }
+const relationalEdgeTypes = { relationEdge: RelationEdge }
+const chenNodeTypes = { chenEntity: ChenEntityNode, chenAttribute: ChenAttributeNode, chenRelationship: ChenRelationshipNode }
 
 interface ErCanvasInnerProps {
+  mode: ErMode
   initialNodes: Node[]
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
+  onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
   onBorderWidthChange: (width: number) => void
 }
 
 function ErCanvasInner({
+  mode,
   initialNodes,
   initialEdges,
   fontSize,
   cardWidth,
   borderWidth,
+  onModeChange,
   onFontSizeChange,
   onCardWidthChange,
   onBorderWidthChange,
@@ -54,6 +62,9 @@ function ErCanvasInner({
   const [nodes, , onNodesChange] = useNodesState(nodesWithStyle)
   const [edges, , onEdgesChange] = useEdgesState(initialEdges)
 
+  const nodeTypes = mode === "chen" ? chenNodeTypes : relationalNodeTypes
+  const edgeTypes = mode === "chen" ? undefined : relationalEdgeTypes
+
   const handleExport = useCallback(
     async (format: "png" | "svg") => {
       if (!wrapperRef.current) return
@@ -65,9 +76,11 @@ function ErCanvasInner({
   return (
     <div className="flex h-full flex-col">
       <Toolbar
+        mode={mode}
         fontSize={fontSize}
         cardWidth={cardWidth}
         borderWidth={borderWidth}
+        onModeChange={onModeChange}
         onFontSizeChange={onFontSizeChange}
         onCardWidthChange={onCardWidthChange}
         onBorderWidthChange={onBorderWidthChange}
@@ -96,11 +109,13 @@ function ErCanvasInner({
 }
 
 interface ErCanvasProps {
+  mode: ErMode
   initialNodes: Node[]
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
   borderWidth: number
+  onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
   onBorderWidthChange: (width: number) => void

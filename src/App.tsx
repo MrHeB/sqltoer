@@ -1,19 +1,29 @@
 import { useState, useMemo, useCallback } from "react"
 import { SqlInputPanel } from "@/components/SqlInputPanel"
 import { ErCanvas } from "@/components/ErCanvas"
+import type { ErMode } from "@/components/Toolbar"
 import { useSqlParser } from "@/hooks/useSqlParser"
 import { schemaToElements } from "@/lib/schema-transformer"
+import { schemaToChenElements } from "@/lib/chen-transformer"
 
 export default function App() {
   const { schema, error, parse } = useSqlParser()
+  const [mode, setMode] = useState<ErMode>("relational")
   const [fontSize, setFontSize] = useState(13)
   const [cardWidth, setCardWidth] = useState(250)
   const [borderWidth, setBorderWidth] = useState(1)
 
-  const { nodes, edges } = useMemo(
-    () => (schema ? schemaToElements(schema, fontSize, cardWidth) : { nodes: [], edges: [] }),
-    [schema, fontSize, cardWidth]
+  const relationalElements = useMemo(
+    () => (schema ? schemaToElements(schema, fontSize, cardWidth, borderWidth) : { nodes: [], edges: [] }),
+    [schema, fontSize, cardWidth, borderWidth]
   )
+
+  const chenElements = useMemo(
+    () => (schema ? schemaToChenElements(schema, fontSize, borderWidth) : { nodes: [], edges: [] }),
+    [schema, fontSize, borderWidth]
+  )
+
+  const { nodes, edges } = mode === "chen" ? chenElements : relationalElements
 
   const handleParse = useCallback(
     (sql: string) => {
@@ -41,11 +51,13 @@ export default function App() {
       <main className="flex-1">
         {schema ? (
           <ErCanvas
+            mode={mode}
             initialNodes={nodes}
             initialEdges={edges}
             fontSize={fontSize}
             cardWidth={cardWidth}
             borderWidth={borderWidth}
+            onModeChange={setMode}
             onFontSizeChange={setFontSize}
             onCardWidthChange={setCardWidth}
             onBorderWidthChange={setBorderWidth}
