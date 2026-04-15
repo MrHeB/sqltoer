@@ -36,10 +36,12 @@ interface ErCanvasInnerProps {
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
+  attrSize: number
   borderWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
 }
 
@@ -49,10 +51,12 @@ function ErCanvasInner({
   initialEdges,
   fontSize,
   cardWidth,
+  attrSize,
   borderWidth,
   onModeChange,
   onFontSizeChange,
   onCardWidthChange,
+  onAttrSizeChange,
   onBorderWidthChange,
 }: ErCanvasInnerProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -65,10 +69,10 @@ function ErCanvasInner({
     setNodes((nds) =>
       nds.map((n) => ({
         ...n,
-        data: { ...n.data, fontSize, cardWidth, borderWidth },
+        data: { ...n.data, fontSize, cardWidth, attrSize, borderWidth },
       }))
     )
-  }, [fontSize, cardWidth, borderWidth, setNodes])
+  }, [fontSize, cardWidth, attrSize, borderWidth, setNodes])
 
   const handleExport = useCallback(
     async (format: "png" | "svg") => {
@@ -84,10 +88,12 @@ function ErCanvasInner({
         mode={mode}
         fontSize={fontSize}
         cardWidth={cardWidth}
+        attrSize={attrSize}
         borderWidth={borderWidth}
         onModeChange={onModeChange}
         onFontSizeChange={onFontSizeChange}
         onCardWidthChange={onCardWidthChange}
+        onAttrSizeChange={onAttrSizeChange}
         onBorderWidthChange={onBorderWidthChange}
         onExport={handleExport}
       />
@@ -119,10 +125,12 @@ interface ErCanvasProps {
   initialEdges: Edge[]
   fontSize: number
   cardWidth: number
+  attrSize: number
   borderWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
 }
 

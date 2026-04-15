@@ -17,7 +17,7 @@ export function ChenRelationshipNode({ data }: NodeProps) {
         <polygon
           points="35,3 67,35 35,67 3,35"
           fill="var(--color-card)"
-          stroke="var(--color-border)"
+          stroke="#000"
           strokeWidth={borderWidth}
         />
       </svg>

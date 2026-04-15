@@ -22,6 +22,7 @@ export function schemaToChenElements(
   schema: ParsedSchema,
   fontSize: number,
   cardWidth: number,
+  attrSize: number,
   borderWidth: number
 ): { nodes: Node[]; edges: Edge[] } {
   const tableNameSet = new Set(schema.tables.map((t) => t.name))
@@ -125,7 +126,7 @@ export function schemaToChenElements(
         id: `chen-a-${table.name}-${col.name}`,
         type: "chenAttribute",
         position: { x: ax, y: ay },
-        data: { name: col.name, isPK: col.isPrimaryKey, fontSize, borderWidth },
+        data: { name: col.name, isPK: col.isPrimaryKey, fontSize, attrSize, borderWidth },
       })
 
       const attrCenter = { x: ax + ATTR_W / 2, y: ay + ATTR_H / 2 }

@@ -8,10 +8,12 @@ interface ToolbarProps {
   mode: ErMode
   fontSize: number
   cardWidth: number
+  attrSize: number
   borderWidth: number
   onModeChange: (mode: ErMode) => void
   onFontSizeChange: (size: number) => void
   onCardWidthChange: (width: number) => void
+  onAttrSizeChange: (size: number) => void
   onBorderWidthChange: (width: number) => void
   onExport: (format: "png" | "svg") => void
 }
@@ -20,10 +22,12 @@ export function Toolbar({
   mode,
   fontSize,
   cardWidth,
+  attrSize,
   borderWidth,
   onModeChange,
   onFontSizeChange,
   onCardWidthChange,
+  onAttrSizeChange,
   onBorderWidthChange,
   onExport,
 }: ToolbarProps) {
@@ -69,6 +73,25 @@ export function Toolbar({
           onChange={(e) => {
             const v = parseInt(e.target.value)
             if (!isNaN(v) && v >= 100 && v <= 600) onCardWidthChange(v)
+          }}
+          className="w-16 h-7 text-xs text-center"
+        />
+        <span className="text-xs text-muted-foreground">px</span>
+      </div>
+
+      <Separator orientation="vertical" className="h-4" />
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">属性大小</span>
+        <Input
+          type="number"
+          min={40}
+          max={200}
+          step={5}
+          value={attrSize}
+          onChange={(e) => {
+            const v = parseInt(e.target.value)
+            if (!isNaN(v) && v >= 40 && v <= 200) onAttrSizeChange(v)
           }}
           className="w-16 h-7 text-xs text-center"
         />

@@ -5,23 +5,24 @@ interface ChenAttributeData {
   name: string
   isPK: boolean
   fontSize: number
+  attrSize: number
   borderWidth: number
   [key: string]: unknown
 }
 
 export function ChenAttributeNode({ data }: NodeProps) {
-  const { name, isPK, fontSize, borderWidth } = data as ChenAttributeData
+  const { name, isPK, fontSize, attrSize, borderWidth } = data as ChenAttributeData
 
   return (
     <div
       className="bg-card flex items-center justify-center"
       style={{
-        width: 80,
-        height: 36,
+        width: attrSize || 80,
+        height: (attrSize || 80) * 0.45,
         borderRadius: "50%",
         borderWidth,
         borderStyle: "solid",
-        borderColor: "var(--color-border)",
+        borderColor: "#000",
         fontSize,
       }}
     >

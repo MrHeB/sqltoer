@@ -20,7 +20,7 @@ export function ChenEntityNode({ data }: NodeProps) {
         height: 50,
         borderWidth,
         borderStyle: "solid",
-        borderColor: "var(--color-border)",
+        borderColor: "#000",
         fontSize,
       }}
     >

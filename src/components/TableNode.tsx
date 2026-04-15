@@ -12,7 +12,7 @@ export function TableNode({ data }: NodeProps) {
   return (
     <div
       className="rounded-lg bg-card shadow-md overflow-hidden"
-      style={{ width: cardWidth, fontSize, borderWidth, borderColor: "var(--color-border)" }}
+      style={{ width: cardWidth, fontSize, borderWidth, borderColor: "#000" }}
     >
       <div className="bg-primary text-primary-foreground px-3 py-2 font-semibold text-center">
         {tableName}

@@ -11,6 +11,7 @@ export default function App() {
   const [mode, setMode] = useState<ErMode>("relational")
   const [fontSize, setFontSize] = useState(13)
   const [cardWidth, setCardWidth] = useState(250)
+  const [attrSize, setAttrSize] = useState(80)
   const [borderWidth, setBorderWidth] = useState(1)
 
   const relationalElements = useMemo(
@@ -19,8 +20,8 @@ export default function App() {
   )
 
   const chenElements = useMemo(
-    () => (schema ? schemaToChenElements(schema, fontSize, cardWidth, borderWidth) : { nodes: [], edges: [] }),
-    [schema, fontSize, cardWidth, borderWidth]
+    () => (schema ? schemaToChenElements(schema, fontSize, cardWidth, attrSize, borderWidth) : { nodes: [], edges: [] }),
+    [schema, fontSize, cardWidth, attrSize, borderWidth]
   )
 
   const { nodes, edges } = mode === "chen" ? chenElements : relationalElements
@@ -56,10 +57,12 @@ export default function App() {
             initialEdges={edges}
             fontSize={fontSize}
             cardWidth={cardWidth}
+            attrSize={attrSize}
             borderWidth={borderWidth}
             onModeChange={setMode}
             onFontSizeChange={setFontSize}
             onCardWidthChange={setCardWidth}
+            onAttrSizeChange={setAttrSize}
             onBorderWidthChange={setBorderWidth}
           />
         ) : (
