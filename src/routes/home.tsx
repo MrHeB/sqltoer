@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { GitBranch, Droplets, Eraser, ArrowRight } from "lucide-react"
+import { GitBranch, Droplets, Eraser, Camera, ArrowRight } from "lucide-react"
 
 const tools = [
   {
@@ -19,6 +19,12 @@ const tools = [
     description: "自动检测并移除 PDF 中的注释水印和低透明度覆盖层，纯浏览器端处理",
     href: "/pdf-remove-watermark",
     icon: Eraser,
+  },
+  {
+    title: "证件照处理",
+    description: "智能抠图换背景、标准尺寸裁剪、排版打印、美颜、合规检测",
+    href: "/id-photo",
+    icon: Camera,
   },
 ]
 

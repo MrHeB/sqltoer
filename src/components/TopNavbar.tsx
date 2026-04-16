@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { Home, GitBranch, Droplets, Eraser } from "lucide-react"
+import { Home, GitBranch, Droplets, Eraser, Camera } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { label: "SQL 转 ER 图", href: "/sql-to-er", icon: GitBranch },
   { label: "PDF 加水印", href: "/pdf-watermark", icon: Droplets },
   { label: "PDF 去水印", href: "/pdf-remove-watermark", icon: Eraser },
+  { label: "证件照处理", href: "/id-photo", icon: Camera },
 ]
 
 export function TopNavbar() {

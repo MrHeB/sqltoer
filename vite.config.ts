@@ -10,4 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    exclude: ['@imgly/background-removal'],
+  },
+  build: {
+    chunkSizeWarningLimit: 10000,
+  },
 })

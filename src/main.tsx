@@ -40,6 +40,13 @@ const router = createBrowserRouter([
           return { Component: PdfRemoveWatermarkPage }
         },
       },
+      {
+        path: "id-photo",
+        lazy: async () => {
+          const { IdPhotoPage } = await import("./routes/id-photo")
+          return { Component: IdPhotoPage }
+        },
+      },
     ],
   },
 ])
