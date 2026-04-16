@@ -49,9 +49,30 @@ export async function generatePrintPdf(
   photoHeightMm: number,
   paperKey: keyof typeof PAPER_SIZES,
   gapMm: number = 3,
+  customCols?: number | null,
+  customRows?: number | null,
 ): Promise<Uint8Array> {
   const paper = PAPER_SIZES[paperKey]
-  const layout = calculateGridLayout(photoWidthMm, photoHeightMm, paperKey, gapMm)
+  let layout: GridLayout
+
+  if (customCols && customRows) {
+    const usedW = customCols * photoWidthMm + (customCols - 1) * gapMm
+    const usedH = customRows * photoHeightMm + (customRows - 1) * gapMm
+    const offsetX = (paper.widthMm - usedW) / 2
+    const offsetY = (paper.heightMm - usedH) / 2
+    const positions: GridLayout["positions"] = []
+    for (let r = 0; r < customRows; r++) {
+      for (let c = 0; c < customCols; c++) {
+        positions.push({
+          x: offsetX + c * (photoWidthMm + gapMm),
+          y: offsetY + r * (photoHeightMm + gapMm),
+        })
+      }
+    }
+    layout = { cols: customCols, rows: customRows, positions }
+  } else {
+    layout = calculateGridLayout(photoWidthMm, photoHeightMm, paperKey, gapMm)
+  }
 
   const pdfDoc = await PDFDocument.create()
   const page = pdfDoc.addPage([mmToPt(paper.widthMm), mmToPt(paper.heightMm)])

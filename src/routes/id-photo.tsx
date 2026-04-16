@@ -10,10 +10,14 @@ import { PrintLayoutPanel } from "@/components/id-photo/PrintLayoutPanel"
 import { BatchPanel } from "@/components/id-photo/BatchPanel"
 import { exportCanvas, downloadBlob } from "@/lib/id-photo/image-operations"
 import { Button } from "@/components/ui/button"
-import { Download, ScanFace } from "lucide-react"
+import { Download, ScanFace, Undo2, Redo2 } from "lucide-react"
 
 export function IdPhotoPage() {
-  const { state, loadImage, removeBg, setBgColor, setPhotoSize, debouncedAdjust, debouncedBeauty, runFaceDetection } = useIdPhoto()
+  const {
+    state, loadImage, removeBg, setBgColor, setBlurLevel,
+    setPhotoSize, setCustomSize, debouncedApply,
+    runFaceDetection, undo, redo, canUndo, canRedo,
+  } = useIdPhoto()
   const [displayScale, setDisplayScale] = useState(1)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -27,7 +31,6 @@ export function IdPhotoPage() {
     [state.processedCanvas, state.sourceFileName, state.selectedSizeId],
   )
 
-  // 计算 canvas 显示缩放
   useEffect(() => {
     if (!state.processedCanvas || !canvasWrapperRef.current) {
       setDisplayScale(1)
@@ -44,8 +47,32 @@ export function IdPhotoPage() {
     <div className="flex h-full">
       <aside className="w-80 shrink-0 border-r border-border bg-background flex flex-col overflow-y-auto">
         <div className="border-b border-border px-4 py-3">
-          <h1 className="text-base font-bold">证件照处理</h1>
-          <p className="text-xs text-muted-foreground">智能抠图、标准尺寸、排版打印</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-base font-bold">证件照处理</h1>
+              <p className="text-xs text-muted-foreground">智能抠图、标准尺寸、排版打印</p>
+            </div>
+            {state.sourceImage && (
+              <div className="flex gap-1">
+                <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent/50 disabled:opacity-30"
+                  title="撤销"
+                >
+                  <Undo2 className="size-3.5" />
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent/50 disabled:opacity-30"
+                  title="重做"
+                >
+                  <Redo2 className="size-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 p-4">
@@ -61,6 +88,8 @@ export function IdPhotoPage() {
                     customBgColor={state.customBgColor}
                     bgRemoved={state.bgRemoved}
                     isProcessing={state.isProcessing}
+                    blurLevel={state.blurLevel}
+                    onBlurLevelChange={setBlurLevel}
                     onRemoveBg={removeBg}
                     onSelectColor={setBgColor}
                   />
@@ -70,24 +99,30 @@ export function IdPhotoPage() {
               <details open>
                 <summary className="cursor-pointer text-xs font-medium">尺寸裁剪</summary>
                 <div className="mt-2">
-                  <CropSection selectedSizeId={state.selectedSizeId} onSelectSize={setPhotoSize} />
+                  <CropSection
+                    selectedSizeId={state.selectedSizeId}
+                    onSelectSize={setPhotoSize}
+                    onCustomSize={setCustomSize}
+                  />
                 </div>
               </details>
 
               <details open>
-                <summary className="cursor-pointer text-xs font-medium">调色</summary>
+                <summary className="cursor-pointer text-xs font-medium">调色 & 滤镜</summary>
                 <div className="mt-2 space-y-2">
-                  <AdjustSlider label="亮度" value={state.brightness} onChange={(v) => debouncedAdjust(v, state.contrast, state.saturation)} />
-                  <AdjustSlider label="对比度" value={state.contrast} onChange={(v) => debouncedAdjust(state.brightness, v, state.saturation)} />
-                  <AdjustSlider label="饱和度" value={state.saturation} onChange={(v) => debouncedAdjust(state.brightness, state.contrast, v)} />
+                  <AdjustSlider label="亮度" value={state.brightness} onChange={(v) => debouncedApply({ brightness: v })} />
+                  <AdjustSlider label="对比度" value={state.contrast} onChange={(v) => debouncedApply({ contrast: v })} />
+                  <AdjustSlider label="饱和度" value={state.saturation} onChange={(v) => debouncedApply({ saturation: v })} />
+                  <AdjustSlider label="锐化" value={state.sharpenLevel} min={0} onChange={(v) => debouncedApply({ sharpenLevel: v })} />
+                  <AdjustSlider label="暗角修复" value={state.vignetteRepair} min={0} onChange={(v) => debouncedApply({ vignetteRepair: v })} />
                 </div>
               </details>
 
               <details>
                 <summary className="cursor-pointer text-xs font-medium">美颜</summary>
                 <div className="mt-2 space-y-2">
-                  <AdjustSlider label="磨皮" value={state.smoothLevel} min={0} onChange={(v) => debouncedBeauty(v, state.whiteningLevel)} />
-                  <AdjustSlider label="美白" value={state.whiteningLevel} min={0} onChange={(v) => debouncedBeauty(state.smoothLevel, v)} />
+                  <AdjustSlider label="磨皮" value={state.smoothLevel} min={0} onChange={(v) => debouncedApply({ smoothLevel: v })} />
+                  <AdjustSlider label="美白" value={state.whiteningLevel} min={0} onChange={(v) => debouncedApply({ whiteningLevel: v })} />
                 </div>
               </details>
 

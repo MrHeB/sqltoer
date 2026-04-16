@@ -65,6 +65,60 @@ export function adjustSaturation(imageData: ImageData, value: number): ImageData
   return new ImageData(data, imageData.width, imageData.height)
 }
 
+/** 锐化（0 ~ 100，基于拉普拉斯算子） */
+export function adjustSharpen(imageData: ImageData, value: number): ImageData {
+  if (value === 0) return imageData
+  const data = new Uint8ClampedArray(imageData.data)
+  const w = imageData.width
+  const h = imageData.height
+  const src = imageData.data
+  const strength = value / 50
+
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = (y * w + x) * 4
+      for (let c = 0; c < 3; c++) {
+        const center = src[idx + c]
+        const laplacian = center * 4
+          - src[((y - 1) * w + x) * 4 + c]
+          - src[((y + 1) * w + x) * 4 + c]
+          - src[(y * w + (x - 1)) * 4 + c]
+          - src[(y * w + (x + 1)) * 4 + c]
+        data[idx + c] = center + laplacian * strength
+      }
+    }
+  }
+
+  return new ImageData(data, w, h)
+}
+
+/** 暗角修复（0 ~ 100，提亮边缘暗角） */
+export function repairVignette(imageData: ImageData, value: number): ImageData {
+  if (value === 0) return imageData
+  const data = new Uint8ClampedArray(imageData.data)
+  const w = imageData.width
+  const h = imageData.height
+  const cx = w / 2
+  const cy = h / 2
+  const maxDist = Math.sqrt(cx * cx + cy * cy)
+  const threshold = maxDist * (1 - value / 100 * 0.6)
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+      if (dist > threshold) {
+        const factor = 1 + ((dist - threshold) / (maxDist - threshold)) * (value / 100) * 0.5
+        const idx = (y * w + x) * 4
+        data[idx] = Math.min(255, data[idx] * factor)
+        data[idx + 1] = Math.min(255, data[idx + 1] * factor)
+        data[idx + 2] = Math.min(255, data[idx + 2] * factor)
+      }
+    }
+  }
+
+  return new ImageData(data, w, h)
+}
+
 /** 将 ImageData 绘制到新 Canvas */
 export function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
   const canvas = document.createElement("canvas")

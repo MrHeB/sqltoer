@@ -80,3 +80,30 @@ export async function applyBackgroundColor(
   ctx.drawImage(img, 0, 0, width, height)
   return canvas
 }
+
+/** 将透明图合成到模糊背景上 */
+export async function applyBlurBackground(
+  sourceCanvas: HTMLCanvasElement,
+  transparentBlob: Blob,
+  blurLevel: number,
+  width: number,
+  height: number,
+): Promise<HTMLCanvasElement> {
+  const url = URL.createObjectURL(transparentBlob)
+  const img = await loadImageElement(url)
+  URL.revokeObjectURL(url)
+
+  const canvas = document.createElement("canvas")
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext("2d")!
+
+  // 绘制原背景并模糊
+  ctx.filter = `blur(${blurLevel}px)`
+  ctx.drawImage(sourceCanvas, 0, 0, width, height)
+  ctx.filter = "none"
+
+  // 叠加前景人物
+  ctx.drawImage(img, 0, 0, width, height)
+  return canvas
+}

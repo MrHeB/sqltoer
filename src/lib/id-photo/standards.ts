@@ -19,6 +19,7 @@ export const BG_COLOR_PRESETS: BgColorOption[] = [
   { id: "red", name: "红底", color: "#d32b2b" },
   { id: "white", name: "白底", color: "#ffffff" },
   { id: "gradient-blue", name: "渐变蓝", color: "linear-gradient(180deg, #6fb1fc 0%, #438edb 100%)" },
+  { id: "blur", name: "模糊底", color: "blur" },
 ]
 
 /** 纸张尺寸（毫米） */

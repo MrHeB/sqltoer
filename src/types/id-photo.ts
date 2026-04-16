@@ -10,7 +10,7 @@ export interface PhotoSizeTemplate {
 }
 
 /** 背景色预设 */
-export type BgColorPreset = "blue" | "red" | "white" | "gradient-blue" | "custom"
+export type BgColorPreset = "blue" | "red" | "white" | "gradient-blue" | "blur" | "custom"
 
 export interface BgColorOption {
   id: BgColorPreset
@@ -66,6 +66,11 @@ export interface IdPhotoState {
   // 美颜
   smoothLevel: number
   whiteningLevel: number
+  // 滤镜
+  sharpenLevel: number
+  vignetteRepair: number
+  // 背景
+  blurLevel: number
   // 人脸检测
   faceDetection: FaceDetectionResult | null
   complianceResults: ComplianceCheckResult[]
@@ -74,8 +79,32 @@ export interface IdPhotoState {
   batchProgress: number
 }
 
+/** 自定义尺寸 */
+export interface CustomSize {
+  widthPx: number
+  heightPx: number
+}
+
+/** 操作历史快照 */
+export interface HistorySnapshot {
+  brightness: number
+  contrast: number
+  saturation: number
+  smoothLevel: number
+  whiteningLevel: number
+  sharpenLevel: number
+  vignetteRepair: number
+  blurLevel: number
+  selectedBgColor: BgColorPreset
+  customBgColor: string
+  selectedSizeId: string
+  customSize: CustomSize | null
+}
+
 /** 排版打印配置 */
 export interface PrintLayoutConfig {
   paperSize: "A4" | "5R"
   gapMm: number
+  cols: number | null
+  rows: number | null
 }
