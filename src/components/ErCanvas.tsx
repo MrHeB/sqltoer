@@ -131,6 +131,7 @@ function ErCanvasInner({
           <Controls />
           <MiniMap pannable zoomable />
           <div
+            data-watermark
             className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center select-none"
           >
             <span className="text-3xl font-bold text-muted-foreground/20 whitespace-nowrap">

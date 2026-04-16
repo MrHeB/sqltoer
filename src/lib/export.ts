@@ -20,6 +20,7 @@ export async function exportDiagram(
   const exportFn = format === "png" ? toPng : toSvg
   const dataUrl = await exportFn(element, {
     backgroundColor: "#ffffff",
+    filter: (node: HTMLElement) => !node.hasAttribute("data-watermark"),
     width: imageWidth,
     height: imageHeight,
     style: {
