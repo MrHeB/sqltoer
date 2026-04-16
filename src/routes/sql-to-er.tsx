@@ -6,7 +6,7 @@ import { useSqlParser } from "@/hooks/useSqlParser"
 import { schemaToElements } from "@/lib/schema-transformer"
 import { schemaToChenElements } from "@/lib/chen-transformer"
 
-export default function App() {
+export function SqlToErPage() {
   const { schema, error, parse } = useSqlParser()
   const [mode, setMode] = useState<ErMode>("relational")
   const [fontSize, setFontSize] = useState(13)
@@ -36,7 +36,7 @@ export default function App() {
   )
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <aside className="w-80 shrink-0 border-r border-border bg-background flex flex-col">
         <div className="border-b border-border px-4 py-3">
           <h1 className="text-base font-bold">SQL to ER</h1>
