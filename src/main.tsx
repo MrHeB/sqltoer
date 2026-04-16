@@ -47,6 +47,48 @@ const router = createBrowserRouter([
           return { Component: IdPhotoPage }
         },
       },
+      {
+        path: "color-tool",
+        lazy: async () => {
+          const { ColorToolPage } = await import("./routes/color-tool")
+          return { Component: ColorToolPage }
+        },
+      },
+      {
+        path: "encoding",
+        lazy: async () => {
+          const { EncodingPage } = await import("./routes/encoding")
+          return { Component: EncodingPage }
+        },
+      },
+      {
+        path: "api-debugger",
+        lazy: async () => {
+          const { ApiDebuggerPage } = await import("./routes/api-debugger")
+          return { Component: ApiDebuggerPage }
+        },
+      },
+      {
+        path: "pdf-merge",
+        lazy: async () => {
+          const { PdfMergePage } = await import("./routes/pdf-merge")
+          return { Component: PdfMergePage }
+        },
+      },
+      {
+        path: "db-designer",
+        lazy: async () => {
+          const { DbDesignerPage } = await import("./routes/db-designer")
+          return { Component: DbDesignerPage }
+        },
+      },
+      {
+        path: "qrcode-tool",
+        lazy: async () => {
+          const { QrcodeToolPage } = await import("./routes/qrcode-tool")
+          return { Component: QrcodeToolPage }
+        },
+      },
     ],
   },
 ])
