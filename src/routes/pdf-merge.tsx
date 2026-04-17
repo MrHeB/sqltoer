@@ -71,15 +71,20 @@ export function PdfMergePage() {
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files
+    e.target.value = ""
     if (!fileList) return
 
     const newFiles: PdfFileInfo[] = []
     for (const file of Array.from(fileList)) {
       if (!file.name.toLowerCase().endsWith(".pdf")) continue
-      const buffer = await file.arrayBuffer()
-      const data = new Uint8Array(buffer)
-      const pdf = await PDFDocument.load(data)
-      newFiles.push({ id: uid(), name: file.name, data, pageCount: pdf.getPageCount() })
+      try {
+        const buffer = await file.arrayBuffer()
+        const data = new Uint8Array(buffer)
+        const pdf = await PDFDocument.load(data)
+        newFiles.push({ id: uid(), name: file.name, data, pageCount: pdf.getPageCount() })
+      } catch {
+        // Skip files that fail to parse
+      }
     }
 
     if (mode === "split" || mode === "manage") {
@@ -100,9 +105,6 @@ export function PdfMergePage() {
     } else {
       setFiles((prev) => [...prev, ...newFiles])
     }
-
-    // Reset file input so same file can be re-selected
-    e.target.value = ""
   }, [mode])
 
   const removeFile = useCallback((id: string) => {

@@ -19,11 +19,15 @@ export function PdfRemoveWatermarkPage() {
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ""
     if (!file) return
     setFileName(file.name)
     setResultPdf(null)
     setRemoveResult(null)
-    file.arrayBuffer().then((buf) => setSourcePdf(new Uint8Array(buf)))
+    file.arrayBuffer().then((buf) => setSourcePdf(new Uint8Array(buf))).catch(() => {
+      setFileName("")
+      setSourcePdf(null)
+    })
   }, [])
 
   const handleRemove = useCallback(async () => {
