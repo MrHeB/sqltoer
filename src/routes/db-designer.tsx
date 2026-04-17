@@ -68,6 +68,15 @@ function decodeHandleId(handleId: string): { role: string; colName: string; side
   return null
 }
 
+function getFkRefForColumn(tableId: string, colName: string, edges: Edge[]): { refTableId: string; refColName: string } | null {
+  const sourceHandle = encodeHandleId("source", colName, "left")
+  const edge = edges.find(e => e.source === tableId && e.sourceHandle === sourceHandle)
+  if (!edge) return null
+  const targetDecoded = decodeHandleId(edge.targetHandle ?? "")
+  if (!targetDecoded) return null
+  return { refTableId: edge.target, refColName: targetDecoded.colName }
+}
+
 function generateDDL(tables: Node[], edges: Edge[]): string {
   const lines: string[] = []
 
@@ -172,7 +181,7 @@ function DbTableNode({ data }: NodeProps) {
               type="source"
               position={Position.Left}
               id={encodeHandleId("source", col.name, "left")}
-              className="!w-2 !h-2 !bg-blue-500 !-left-1"
+              className="!w-3 !h-3 !bg-blue-400 hover:!bg-blue-600 !-left-1.5 !border-2 !border-white !rounded-full !transition-colors"
             />
             {col.isPK && (
               <span className="shrink-0 rounded bg-amber-100 text-amber-700 px-1 text-[0.65em] font-bold leading-none">
@@ -193,7 +202,7 @@ function DbTableNode({ data }: NodeProps) {
               type="target"
               position={Position.Right}
               id={encodeHandleId("target", col.name, "right")}
-              className="!w-2 !h-2 !bg-amber-500 !-right-1"
+              className="!w-3 !h-3 !bg-amber-400 hover:!bg-amber-600 !-right-1.5 !border-2 !border-white !rounded-full !transition-colors"
             />
           </div>
         ))}
@@ -392,6 +401,15 @@ export function DbDesignerPage() {
         )
       }
     }
+    // When unchecking FK, remove the related edge
+    if (field === "isFK" && value === false) {
+      const node = nodes.find((n) => n.id === tableId)
+      const col = node && ((node.data as unknown as TableNodeData).columns.find((c) => c.id === colId))
+      if (col) {
+        const sourceH = encodeHandleId("source", col.name, "left")
+        setEdges((prev) => prev.filter((e) => !(e.source === tableId && e.sourceHandle === sourceH)))
+      }
+    }
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== tableId) return n
@@ -416,7 +434,21 @@ export function DbDesignerPage() {
       data: { relationType: "1:N" } satisfies RelationEdgeData,
     }
     setEdges((prev) => addEdge(newEdge, prev))
-  }, [setEdges])
+    // Auto-set isFK on the source column
+    const sourceDecoded = decodeHandleId(connection.sourceHandle ?? "")
+    if (sourceDecoded) {
+      setNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== connection.source) return n
+          const d = n.data as unknown as TableNodeData
+          return {
+            ...n,
+            data: { ...d, columns: d.columns.map((c) => c.name === sourceDecoded.colName ? { ...c, isFK: true } : c) },
+          }
+        })
+      )
+    }
+  }, [setNodes, setEdges])
 
   const updateRelationType = useCallback((edgeId: string, relationType: RelationType) => {
     setEdges((prev) =>
@@ -429,6 +461,33 @@ export function DbDesignerPage() {
   const removeRelation = useCallback((edgeId: string) => {
     setEdges((prev) => prev.filter((e) => e.id !== edgeId))
   }, [setEdges])
+
+  const handleFkRefChange = useCallback((tableId: string, colId: string, refTableId: string, refColName: string) => {
+    const node = nodes.find((n) => n.id === tableId)
+    if (!node) return
+    const data = node.data as unknown as TableNodeData
+    const col = data.columns.find((c) => c.id === colId)
+    if (!col) return
+
+    const sourceHandle = encodeHandleId("source", col.name, "left")
+    // Remove existing edge for this column
+    setEdges((prev) => prev.filter((e) => !(e.source === tableId && e.sourceHandle === sourceHandle)))
+
+    if (!refTableId || !refColName) return
+
+    // Create new edge
+    const targetHandle = encodeHandleId("target", refColName, "right")
+    const newEdge: Edge = {
+      id: `edge-${tableId}-${refTableId}-${uid()}`,
+      source: tableId,
+      target: refTableId,
+      sourceHandle,
+      targetHandle,
+      type: "dbRelation",
+      data: { relationType: "1:N" } satisfies RelationEdgeData,
+    }
+    setEdges((prev) => [...prev, newEdge])
+  }, [nodes, setEdges])
 
   const handleAutoLayout = useCallback(() => {
     const layouted = applyAutoLayout(nodes, edges)
@@ -506,41 +565,82 @@ export function DbDesignerPage() {
 
                   {/* Columns */}
                   <div className="space-y-1">
-                    {data.columns.map((col) => (
-                      <div key={col.id} className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={col.isPK}
-                          onChange={() => updateColumn(node.id, col.id, "isPK", !col.isPK)}
-                          className="size-3 accent-amber-500"
-                          title="Primary Key"
-                        />
-                        <input
-                          type="checkbox"
-                          checked={col.isFK}
-                          onChange={() => updateColumn(node.id, col.id, "isFK", !col.isFK)}
-                          className="size-3 accent-blue-500"
-                          title="Foreign Key"
-                        />
-                        <Input
-                          value={col.name}
-                          onChange={(e) => updateColumn(node.id, col.id, "name", e.target.value)}
-                          className="h-5 flex-1 text-[11px] px-1"
-                        />
-                        <select
-                          value={col.type}
-                          onChange={(e) => updateColumn(node.id, col.id, "type", e.target.value)}
-                          className="h-5 rounded border border-input bg-transparent px-0.5 text-[11px] outline-none max-w-24"
-                        >
-                          {SQL_TYPES.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeColumn(node.id, col.id)} className="text-muted-foreground hover:text-destructive shrink-0">
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                    ))}
+                    {data.columns.map((col) => {
+                      const fkRef = getFkRefForColumn(node.id, col.name, edges)
+                      const otherTables = tableNodes.filter((t) => t.id !== node.id)
+                      const refTableData = fkRef ? (otherTables.find((t) => t.id === fkRef.refTableId)?.data as unknown as TableNodeData) : null
+                      const refTableColumns = refTableData?.columns ?? []
+
+                      return (
+                        <div key={col.id} className="space-y-1">
+                          <div className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={col.isPK}
+                              onChange={() => updateColumn(node.id, col.id, "isPK", !col.isPK)}
+                              className="size-3 accent-amber-500"
+                              title="Primary Key"
+                            />
+                            <input
+                              type="checkbox"
+                              checked={col.isFK}
+                              onChange={() => updateColumn(node.id, col.id, "isFK", !col.isFK)}
+                              className="size-3 accent-blue-500"
+                              title="Foreign Key"
+                            />
+                            <Input
+                              value={col.name}
+                              onChange={(e) => updateColumn(node.id, col.id, "name", e.target.value)}
+                              className="h-5 flex-1 text-[11px] px-1"
+                            />
+                            <select
+                              value={col.type}
+                              onChange={(e) => updateColumn(node.id, col.id, "type", e.target.value)}
+                              className="h-5 rounded border border-input bg-transparent px-0.5 text-[11px] outline-none max-w-24"
+                            >
+                              {SQL_TYPES.map((t) => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                            <button onClick={() => removeColumn(node.id, col.id)} className="text-muted-foreground hover:text-destructive shrink-0">
+                              <X className="size-3" />
+                            </button>
+                          </div>
+                          {col.isFK && (
+                            <div className="flex items-center gap-1 text-[11px] pl-7">
+                              <span className="text-muted-foreground shrink-0">引用:</span>
+                              <select
+                                value={fkRef?.refTableId ?? ""}
+                                onChange={(e) => {
+                                  const tid = e.target.value
+                                  if (!tid) { handleFkRefChange(node.id, col.id, "", ""); return }
+                                  const td = (tableNodes.find((t) => t.id === tid)?.data as unknown as TableNodeData)
+                                  const pkCol = td?.columns.find((c) => c.isPK)
+                                  handleFkRefChange(node.id, col.id, tid, pkCol?.name ?? "")
+                                }}
+                                className="h-5 rounded border border-input bg-transparent px-0.5 text-[11px] outline-none"
+                              >
+                                <option value="">选择表</option>
+                                {otherTables.map((t) => (
+                                  <option key={t.id} value={t.id}>{(t.data as unknown as TableNodeData).tableName}</option>
+                                ))}
+                              </select>
+                              <span className="text-muted-foreground">.</span>
+                              <select
+                                value={fkRef?.refColName ?? ""}
+                                onChange={(e) => handleFkRefChange(node.id, col.id, fkRef?.refTableId ?? "", e.target.value)}
+                                className="h-5 rounded border border-input bg-transparent px-0.5 text-[11px] outline-none"
+                              >
+                                <option value="">选择列</option>
+                                {refTableColumns.map((c) => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                     <button
                       onClick={() => addColumn(node.id)}
                       className="text-[11px] text-primary hover:underline"
