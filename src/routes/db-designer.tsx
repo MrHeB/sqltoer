@@ -7,16 +7,20 @@ import {
   Background,
   Handle,
   Position,
+  BaseEdge,
+  EdgeLabelRenderer,
+  getSmoothStepPath,
 } from "@xyflow/react"
-import type { Node, Edge, NodeProps, Connection } from "@xyflow/react"
+import type { Node, Edge, NodeProps, EdgeProps, Connection } from "@xyflow/react"
 import { useNodesState, useEdgesState, addEdge } from "@xyflow/react"
 import dagre from "@dagrejs/dagre"
 import "@xyflow/react/dist/style.css"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import {
-  Plus, Trash2, LayoutGrid, FileCode2, Pencil, Check, X,
+  Plus, Trash2, LayoutGrid, FileCode2, Pencil, Check, X, ArrowRight,
 } from "lucide-react"
 
 /* ========== Types ========== */
@@ -34,6 +38,12 @@ interface TableNodeData {
   columns: ColumnDef[]
 }
 
+type RelationType = "1:1" | "1:N" | "M:N"
+
+interface RelationEdgeData {
+  relationType: RelationType
+}
+
 /* ========== Helpers ========== */
 function uid(): string {
   return Math.random().toString(36).slice(2, 10)
@@ -44,6 +54,19 @@ const SQL_TYPES = [
   "TEXT", "BOOLEAN", "DATE", "TIMESTAMP", "DECIMAL(10,2)",
   "FLOAT", "DOUBLE", "BLOB", "JSON",
 ]
+
+function encodeHandleId(role: "source" | "target", colName: string, side: "left" | "right"): string {
+  return `${role}::${colName}::${side}`
+}
+
+function decodeHandleId(handleId: string): { role: string; colName: string; side: string } | null {
+  const parts = handleId.split("::")
+  if (parts.length === 3) return { role: parts[0], colName: parts[1], side: parts[2] }
+  // Legacy fallback: "source-colName-left" / "target-colName-right"
+  const legacy = handleId.match(/^(source|target)-(.+)-(left|right)$/)
+  if (legacy) return { role: legacy[1], colName: legacy[2], side: legacy[3] }
+  return null
+}
 
 function generateDDL(tables: Node[], edges: Edge[]): string {
   const lines: string[] = []
@@ -75,14 +98,26 @@ function generateDDL(tables: Node[], edges: Edge[]): string {
     const sourceData = sourceTable.data as unknown as TableNodeData
     const targetData = targetTable.data as unknown as TableNodeData
 
-    const sourceHandle = edge.sourceHandle ?? ""
-    const targetHandle = edge.targetHandle ?? ""
+    const sourceDecoded = decodeHandleId(edge.sourceHandle ?? "")
+    const targetDecoded = decodeHandleId(edge.targetHandle ?? "")
+    if (!sourceDecoded || !targetDecoded) continue
 
-    // Extract column name from handle id: "source-colName-left" or "target-colName-right"
-    const sourceColName = sourceHandle.replace(/^source-/, "").replace(/-left$/, "").replace(/-right$/, "")
-    const targetColName = targetHandle.replace(/^target-/, "").replace(/-left$/, "").replace(/-right$/, "")
+    const sourceColName = sourceDecoded.colName
+    const targetColName = targetDecoded.colName
+    const relType = (edge.data as RelationEdgeData)?.relationType ?? "1:N"
 
-    if (sourceColName && targetColName) {
+    if (relType === "M:N") {
+      const junctionTableName = `${sourceData.tableName}_${targetData.tableName}`
+      lines.push(
+        `CREATE TABLE "${junctionTableName}" (\n` +
+        `  "${sourceData.tableName}_id" INT NOT NULL,\n` +
+        `  "${targetData.tableName}_id" INT NOT NULL,\n` +
+        `  PRIMARY KEY ("${sourceData.tableName}_id", "${targetData.tableName}_id"),\n` +
+        `  CONSTRAINT "fk_${junctionTableName}_${sourceData.tableName}" FOREIGN KEY ("${sourceData.tableName}_id") REFERENCES "${sourceData.tableName}"("${sourceColName}"),\n` +
+        `  CONSTRAINT "fk_${junctionTableName}_${targetData.tableName}" FOREIGN KEY ("${targetData.tableName}_id") REFERENCES "${targetData.tableName}"("${targetColName}")\n` +
+        `);`
+      )
+    } else {
       lines.push(
         `ALTER TABLE "${sourceData.tableName}" ADD CONSTRAINT "fk_${sourceData.tableName}_${sourceColName}" FOREIGN KEY ("${sourceColName}") REFERENCES "${targetData.tableName}"("${targetColName}");`
       )
@@ -136,7 +171,7 @@ function DbTableNode({ data }: NodeProps) {
             <Handle
               type="source"
               position={Position.Left}
-              id={`source-${col.name}-left`}
+              id={encodeHandleId("source", col.name, "left")}
               className="!w-2 !h-2 !bg-blue-500 !-left-1"
             />
             {col.isPK && (
@@ -157,7 +192,7 @@ function DbTableNode({ data }: NodeProps) {
             <Handle
               type="target"
               position={Position.Right}
-              id={`target-${col.name}-right`}
+              id={encodeHandleId("target", col.name, "right")}
               className="!w-2 !h-2 !bg-amber-500 !-right-1"
             />
           </div>
@@ -168,6 +203,55 @@ function DbTableNode({ data }: NodeProps) {
 }
 
 const nodeTypes = { dbTable: DbTableNode }
+
+/* ========== Custom Relation Edge ========== */
+function DbRelationEdge({
+  id,
+  sourceX, sourceY,
+  targetX, targetY,
+  sourcePosition, targetPosition,
+  selected,
+  data,
+}: EdgeProps) {
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
+    sourceX, sourceY, targetX, targetY,
+    sourcePosition, targetPosition,
+    borderRadius: 8,
+  })
+
+  const relType = (data as RelationEdgeData)?.relationType ?? "1:N"
+
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          strokeWidth: selected ? 2.5 : 1.5,
+          stroke: selected ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+        }}
+      />
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            pointerEvents: "all",
+          }}
+          className={cn(
+            "absolute rounded border px-1.5 py-0.5 text-[11px] font-medium shadow-sm cursor-pointer",
+            selected
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background border-border text-muted-foreground"
+          )}
+        >
+          {relType}
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  )
+}
+
+const edgeTypes = { dbRelation: DbRelationEdge }
 
 /* ========== Canvas Inner ========== */
 function DbCanvasInner({
@@ -191,11 +275,13 @@ function DbCanvasInner({
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       fitView
       fitViewOptions={{ padding: 0.2 }}
       minZoom={0.1}
       maxZoom={2}
-      defaultEdgeOptions={{ type: "smoothstep", label: "1:N", style: { strokeWidth: 1.5 } }}
+      defaultEdgeOptions={{ type: "dbRelation", data: { relationType: "1:N" } }}
+      deleteKeyCode="Backspace"
     >
       <Background />
       <Controls />
@@ -270,6 +356,14 @@ export function DbDesignerPage() {
   }, [setNodes])
 
   const removeColumn = useCallback((tableId: string, colId: string) => {
+    // Find column name before removing, to clean up related edges
+    const node = nodes.find((n) => n.id === tableId)
+    const col = node && ((node.data as unknown as TableNodeData).columns.find((c) => c.id === colId))
+    if (col) {
+      const sourceH = encodeHandleId("source", col.name, "left")
+      const targetH = encodeHandleId("target", col.name, "right")
+      setEdges((prev) => prev.filter((e) => e.sourceHandle !== sourceH && e.targetHandle !== targetH))
+    }
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== tableId) return n
@@ -277,9 +371,27 @@ export function DbDesignerPage() {
         return { ...n, data: { ...data, columns: data.columns.filter((c) => c.id !== colId) } }
       })
     )
-  }, [setNodes])
+  }, [nodes, setNodes, setEdges])
 
   const updateColumn = useCallback((tableId: string, colId: string, field: keyof ColumnDef, value: string | boolean) => {
+    // When renaming a column, update related edge handles
+    if (field === "name" && typeof value === "string") {
+      const node = nodes.find((n) => n.id === tableId)
+      const col = node && ((node.data as unknown as TableNodeData).columns.find((c) => c.id === colId))
+      if (col) {
+        const oldSourceH = encodeHandleId("source", col.name, "left")
+        const oldTargetH = encodeHandleId("target", col.name, "right")
+        const newSourceH = encodeHandleId("source", value, "left")
+        const newTargetH = encodeHandleId("target", value, "right")
+        setEdges((prev) =>
+          prev.map((e) => ({
+            ...e,
+            sourceHandle: e.sourceHandle === oldSourceH ? newSourceH : e.sourceHandle,
+            targetHandle: e.targetHandle === oldTargetH ? newTargetH : e.targetHandle,
+          }))
+        )
+      }
+    }
     setNodes((prev) =>
       prev.map((n) => {
         if (n.id !== tableId) return n
@@ -290,7 +402,7 @@ export function DbDesignerPage() {
         }
       })
     )
-  }, [setNodes])
+  }, [nodes, setNodes, setEdges])
 
   const handleConnect = useCallback((connection: Connection) => {
     if (!connection.source || !connection.target) return
@@ -300,11 +412,22 @@ export function DbDesignerPage() {
       target: connection.target,
       sourceHandle: connection.sourceHandle ?? undefined,
       targetHandle: connection.targetHandle ?? undefined,
-      type: "smoothstep",
-      label: "1:N",
-      style: { strokeWidth: 1.5 },
+      type: "dbRelation",
+      data: { relationType: "1:N" } satisfies RelationEdgeData,
     }
     setEdges((prev) => addEdge(newEdge, prev))
+  }, [setEdges])
+
+  const updateRelationType = useCallback((edgeId: string, relationType: RelationType) => {
+    setEdges((prev) =>
+      prev.map((e) =>
+        e.id === edgeId ? { ...e, data: { ...e.data, relationType } } : e
+      )
+    )
+  }, [setEdges])
+
+  const removeRelation = useCallback((edgeId: string) => {
+    setEdges((prev) => prev.filter((e) => e.id !== edgeId))
   }, [setEdges])
 
   const handleAutoLayout = useCallback(() => {
@@ -429,6 +552,57 @@ export function DbDesignerPage() {
               )
             })}
           </div>
+
+          {/* Relations list */}
+          {edges.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                关系 ({edges.length})
+              </h2>
+              {edges.map((edge) => {
+                const sourceTable = tableNodes.find((n) => n.id === edge.source)
+                const targetTable = tableNodes.find((n) => n.id === edge.target)
+                if (!sourceTable || !targetTable) return null
+
+                const sourceData = sourceTable.data as unknown as TableNodeData
+                const targetData = targetTable.data as unknown as TableNodeData
+                const relType = (edge.data as RelationEdgeData)?.relationType ?? "1:N"
+
+                const sourceDecoded = decodeHandleId(edge.sourceHandle ?? "")
+                const targetDecoded = decodeHandleId(edge.targetHandle ?? "")
+                const sourceCol = sourceDecoded?.colName ?? "?"
+                const targetCol = targetDecoded?.colName ?? "?"
+
+                return (
+                  <div key={edge.id} className="rounded-lg border border-border p-2.5 space-y-1.5 text-xs">
+                    <div className="flex items-center gap-1 text-[11px]">
+                      <span className="font-medium truncate">{sourceData.tableName}.{sourceCol}</span>
+                      <ArrowRight className="size-3 shrink-0 text-muted-foreground" />
+                      <span className="font-medium truncate">{targetData.tableName}.{targetCol}</span>
+                      <button
+                        onClick={() => removeRelation(edge.id)}
+                        className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground">类型:</span>
+                      <select
+                        value={relType}
+                        onChange={(e) => updateRelationType(edge.id, e.target.value as RelationType)}
+                        className="h-5 rounded border border-input bg-transparent px-1 text-[11px] outline-none"
+                      >
+                        <option value="1:1">1:1</option>
+                        <option value="1:N">1:N</option>
+                        <option value="M:N">M:N</option>
+                      </select>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {/* Export DDL */}
           <div className="border-t border-border pt-3 space-y-2">
