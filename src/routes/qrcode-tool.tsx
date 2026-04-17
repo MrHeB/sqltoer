@@ -91,13 +91,45 @@ async function drawQrCode(canvas: HTMLCanvasElement, text: string, options: {
   fgColor: string
   bgColor: string
   errorLevel: string
+  bgImageSrc?: string | null
 }) {
-  await QRCode.toCanvas(canvas, text, {
-    width: options.size,
-    color: { dark: options.fgColor, light: options.bgColor },
-    errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
-    margin: 2,
-  })
+  if (options.bgImageSrc) {
+    const bgImg = new Image()
+    await new Promise<void>((resolve, reject) => {
+      bgImg.onload = () => resolve()
+      bgImg.onerror = () => reject()
+      bgImg.src = options.bgImageSrc!
+    })
+
+    const maxDim = 1200
+    const scale = Math.min(1, maxDim / Math.max(bgImg.width, bgImg.height))
+    const cw = Math.round(bgImg.width * scale)
+    const ch = Math.round(bgImg.height * scale)
+
+    canvas.width = cw
+    canvas.height = ch
+    const ctx = canvas.getContext("2d")!
+    ctx.drawImage(bgImg, 0, 0, cw, ch)
+
+    const qrSize = Math.min(options.size, cw * 0.8, ch * 0.8)
+
+    const tempCanvas = document.createElement("canvas")
+    await QRCode.toCanvas(tempCanvas, text, {
+      width: qrSize,
+      color: { dark: options.fgColor, light: "#00000000" },
+      errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
+      margin: 2,
+    })
+
+    ctx.drawImage(tempCanvas, (cw - tempCanvas.width) / 2, (ch - tempCanvas.height) / 2)
+  } else {
+    await QRCode.toCanvas(canvas, text, {
+      width: options.size,
+      color: { dark: options.fgColor, light: options.bgColor },
+      errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
+      margin: 2,
+    })
+  }
 }
 
 /* ========== Main Component ========== */
@@ -111,6 +143,7 @@ export function QrcodeToolPage() {
   const [qrFgColor, setQrFgColor] = useState("#000000")
   const [qrBgColor, setQrBgColor] = useState("#ffffff")
   const [qrErrorLevel, setQrErrorLevel] = useState("M")
+  const [bgImageData, setBgImageData] = useState<string | null>(null)
 
   // Scan state
   const [scanFileName, setScanFileName] = useState("")
@@ -125,6 +158,7 @@ export function QrcodeToolPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const batchCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map())
+  const bgImageInputRef = useRef<HTMLInputElement>(null)
 
   /* ---- Generate QR ---- */
   const generateQr = useCallback(async () => {
@@ -135,8 +169,9 @@ export function QrcodeToolPage() {
       fgColor: qrFgColor,
       bgColor: qrBgColor,
       errorLevel: qrErrorLevel,
+      bgImageSrc: bgImageData,
     })
-  }, [qrText, qrSize, qrFgColor, qrBgColor, qrErrorLevel])
+  }, [qrText, qrSize, qrFgColor, qrBgColor, qrErrorLevel, bgImageData])
 
   useEffect(() => {
     if (mode === "generate") generateQr()
@@ -168,6 +203,15 @@ export function QrcodeToolPage() {
       }
       img.src = reader.result as string
     }
+    reader.readAsDataURL(file)
+    e.target.value = ""
+  }, [])
+
+  const handleBgImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setBgImageData(reader.result as string)
     reader.readAsDataURL(file)
     e.target.value = ""
   }, [])
@@ -274,6 +318,31 @@ export function QrcodeToolPage() {
                     className="h-7 w-full cursor-pointer rounded border border-border p-0.5"
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">背景图片</label>
+                <input
+                  ref={bgImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBgImage}
+                  className="hidden"
+                />
+                <div className="flex gap-1">
+                  <Button variant="outline" size="xs" onClick={() => bgImageInputRef.current?.click()} className="flex-1">
+                    <Upload className="size-3" /> 选择图片
+                  </Button>
+                  {bgImageData && (
+                    <Button variant="outline" size="xs" onClick={() => setBgImageData(null)} className="flex-1">
+                      清除
+                    </Button>
+                  )}
+                </div>
+                {bgImageData && (
+                  <div className="mt-1 overflow-hidden rounded border border-border">
+                    <img src={bgImageData} alt="背景" className="h-auto w-full" />
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium">容错级别</label>
