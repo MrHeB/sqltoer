@@ -91,45 +91,13 @@ async function drawQrCode(canvas: HTMLCanvasElement, text: string, options: {
   fgColor: string
   bgColor: string
   errorLevel: string
-  bgImageSrc?: string | null
 }) {
-  if (options.bgImageSrc) {
-    const bgImg = new Image()
-    await new Promise<void>((resolve, reject) => {
-      bgImg.onload = () => resolve()
-      bgImg.onerror = () => reject()
-      bgImg.src = options.bgImageSrc!
-    })
-
-    const maxDim = 1200
-    const scale = Math.min(1, maxDim / Math.max(bgImg.width, bgImg.height))
-    const cw = Math.round(bgImg.width * scale)
-    const ch = Math.round(bgImg.height * scale)
-
-    canvas.width = cw
-    canvas.height = ch
-    const ctx = canvas.getContext("2d")!
-    ctx.drawImage(bgImg, 0, 0, cw, ch)
-
-    const qrSize = Math.min(options.size, cw * 0.8, ch * 0.8)
-
-    const tempCanvas = document.createElement("canvas")
-    await QRCode.toCanvas(tempCanvas, text, {
-      width: qrSize,
-      color: { dark: options.fgColor, light: "#00000000" },
-      errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
-      margin: 2,
-    })
-
-    ctx.drawImage(tempCanvas, (cw - tempCanvas.width) / 2, (ch - tempCanvas.height) / 2)
-  } else {
-    await QRCode.toCanvas(canvas, text, {
-      width: options.size,
-      color: { dark: options.fgColor, light: options.bgColor },
-      errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
-      margin: 2,
-    })
-  }
+  await QRCode.toCanvas(canvas, text, {
+    width: options.size,
+    color: { dark: options.fgColor, light: options.bgColor },
+    errorCorrectionLevel: options.errorLevel as "L" | "M" | "Q" | "H",
+    margin: 2,
+  })
 }
 
 /* ========== Main Component ========== */
@@ -144,6 +112,8 @@ export function QrcodeToolPage() {
   const [qrBgColor, setQrBgColor] = useState("#ffffff")
   const [qrErrorLevel, setQrErrorLevel] = useState("M")
   const [bgImageData, setBgImageData] = useState<string | null>(null)
+  const [qrPosX, setQrPosX] = useState(50)
+  const [qrPosY, setQrPosY] = useState(50)
 
   // Scan state
   const [scanFileName, setScanFileName] = useState("")
@@ -159,18 +129,28 @@ export function QrcodeToolPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const batchCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const bgImageInputRef = useRef<HTMLInputElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, posStartX: 0, posStartY: 0 })
 
   /* ---- Generate QR ---- */
   const generateQr = useCallback(async () => {
     const canvas = canvasRef.current
     if (!canvas || !qrText) return
-    await drawQrCode(canvas, qrText, {
-      size: qrSize,
-      fgColor: qrFgColor,
-      bgColor: qrBgColor,
-      errorLevel: qrErrorLevel,
-      bgImageSrc: bgImageData,
-    })
+    if (bgImageData) {
+      await QRCode.toCanvas(canvas, qrText, {
+        width: qrSize,
+        color: { dark: qrFgColor, light: "#00000000" },
+        errorCorrectionLevel: qrErrorLevel as "L" | "M" | "Q" | "H",
+        margin: 2,
+      })
+    } else {
+      await drawQrCode(canvas, qrText, {
+        size: qrSize,
+        fgColor: qrFgColor,
+        bgColor: qrBgColor,
+        errorLevel: qrErrorLevel,
+      })
+    }
   }, [qrText, qrSize, qrFgColor, qrBgColor, qrErrorLevel, bgImageData])
 
   useEffect(() => {
@@ -211,9 +191,38 @@ export function QrcodeToolPage() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setBgImageData(reader.result as string)
+    reader.onload = () => {
+      setBgImageData(reader.result as string)
+      setQrPosX(50)
+      setQrPosY(50)
+    }
     reader.readAsDataURL(file)
     e.target.value = ""
+  }, [])
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      posStartX: qrPosX,
+      posStartY: qrPosY,
+    }
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }, [qrPosX, qrPosY])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current.active || !previewRef.current) return
+    const rect = previewRef.current.getBoundingClientRect()
+    const dx = ((e.clientX - dragRef.current.startX) / rect.width) * 100
+    const dy = ((e.clientY - dragRef.current.startY) / rect.height) * 100
+    setQrPosX(Math.max(0, Math.min(100, dragRef.current.posStartX + dx)))
+    setQrPosY(Math.max(0, Math.min(100, dragRef.current.posStartY + dy)))
+  }, [])
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current.active = false
   }, [])
 
   /* ---- Generate Barcode ---- */
@@ -245,15 +254,46 @@ export function QrcodeToolPage() {
   }, [mode, batchInput])
 
   /* ---- Download ---- */
-  const downloadCanvas = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const url = canvas.toDataURL("image/png")
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${mode === "barcode" ? "barcode" : "qrcode"}.png`
-    a.click()
-  }, [mode])
+  const downloadCanvas = useCallback(async () => {
+    if (bgImageData && mode === "generate") {
+      const bgImg = new Image()
+      await new Promise<void>((resolve, reject) => {
+        bgImg.onload = () => resolve()
+        bgImg.onerror = reject
+        bgImg.src = bgImageData
+      })
+      const cvs = document.createElement("canvas")
+      const maxDim = 1200
+      const scale = Math.min(1, maxDim / Math.max(bgImg.width, bgImg.height))
+      cvs.width = Math.round(bgImg.width * scale)
+      cvs.height = Math.round(bgImg.height * scale)
+      const ctx = cvs.getContext("2d")!
+      ctx.drawImage(bgImg, 0, 0, cvs.width, cvs.height)
+
+      const qrCanvas = document.createElement("canvas")
+      await QRCode.toCanvas(qrCanvas, qrText, {
+        width: qrSize,
+        color: { dark: qrFgColor, light: "#00000000" },
+        errorCorrectionLevel: qrErrorLevel as "L" | "M" | "Q" | "H",
+        margin: 2,
+      })
+      ctx.drawImage(qrCanvas, (qrPosX / 100) * cvs.width - qrCanvas.width / 2, (qrPosY / 100) * cvs.height - qrCanvas.height / 2)
+
+      const url = cvs.toDataURL("image/png")
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "qrcode.png"
+      a.click()
+    } else {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const url = canvas.toDataURL("image/png")
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${mode === "barcode" ? "barcode" : "qrcode"}.png`
+      a.click()
+    }
+  }, [mode, bgImageData, qrText, qrSize, qrFgColor, qrErrorLevel, qrPosX, qrPosY])
 
   return (
     <div className="flex h-full">
@@ -333,7 +373,7 @@ export function QrcodeToolPage() {
                     <Upload className="size-3" /> 选择图片
                   </Button>
                   {bgImageData && (
-                    <Button variant="outline" size="xs" onClick={() => setBgImageData(null)} className="flex-1">
+                    <Button variant="outline" size="xs" onClick={() => { setBgImageData(null); setQrPosX(50); setQrPosY(50) }} className="flex-1">
                       清除
                     </Button>
                   )}
@@ -440,12 +480,46 @@ export function QrcodeToolPage() {
       </aside>
 
       <main className="flex-1 bg-muted/30 overflow-auto p-6">
-        {/* Generate QR / Barcode main */}
-        {(mode === "generate" || mode === "barcode") && (
+        {/* Barcode main */}
+        {mode === "barcode" && (
           <div className="flex h-full items-center justify-center">
             <div className="rounded-xl bg-background p-6 shadow-sm border border-border">
               <canvas ref={canvasRef} />
             </div>
+          </div>
+        )}
+
+        {/* Generate QR without background */}
+        {mode === "generate" && !bgImageData && (
+          <div className="flex h-full items-center justify-center">
+            <div className="rounded-xl bg-background p-6 shadow-sm border border-border">
+              <canvas ref={canvasRef} />
+            </div>
+          </div>
+        )}
+
+        {/* Generate QR with draggable background */}
+        {mode === "generate" && bgImageData && (
+          <div className="flex h-full flex-col items-center justify-center gap-2">
+            <div
+              ref={previewRef}
+              className="relative inline-block overflow-hidden rounded-xl shadow-sm border border-border"
+            >
+              <img src={bgImageData} alt="背景" className="block max-h-[70vh] max-w-full object-contain" />
+              <canvas
+                ref={canvasRef}
+                className="absolute cursor-grab touch-none active:cursor-grabbing"
+                style={{
+                  left: `${qrPosX}%`,
+                  top: `${qrPosY}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">拖拽二维码调整位置</p>
           </div>
         )}
 
