@@ -113,7 +113,7 @@ function generateDDL(tables: Node[], edges: Edge[]): string {
 
     const sourceColName = sourceDecoded.colName
     const targetColName = targetDecoded.colName
-    const relType = (edge.data as RelationEdgeData)?.relationType ?? "1:N"
+    const relType = (edge.data as unknown as RelationEdgeData)?.relationType ?? "1:N"
 
     if (relType === "M:N") {
       const junctionTableName = `${sourceData.tableName}_${targetData.tableName}`
@@ -228,7 +228,7 @@ function DbRelationEdge({
     borderRadius: 8,
   })
 
-  const relType = (data as RelationEdgeData)?.relationType ?? "1:N"
+  const relType = (data as unknown as RelationEdgeData)?.relationType ?? "1:N"
 
   return (
     <>
@@ -666,7 +666,7 @@ export function DbDesignerPage() {
 
                 const sourceData = sourceTable.data as unknown as TableNodeData
                 const targetData = targetTable.data as unknown as TableNodeData
-                const relType = (edge.data as RelationEdgeData)?.relationType ?? "1:N"
+                const relType = (edge.data as unknown as RelationEdgeData)?.relationType ?? "1:N"
 
                 const sourceDecoded = decodeHandleId(edge.sourceHandle ?? "")
                 const targetDecoded = decodeHandleId(edge.targetHandle ?? "")
