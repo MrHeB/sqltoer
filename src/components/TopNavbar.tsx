@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { Home, GitBranch, Droplets, Eraser, Camera, Palette, Binary, Send, FileStack, Database, QrCode } from "lucide-react"
+import { Home, GitBranch, Droplets, Eraser, Camera, Palette, Binary, Send, FileStack, Database, QrCode, Braces, ImageDown, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -14,6 +14,9 @@ const navItems = [
   { label: "API 调试", href: "/api-debugger", icon: Send },
   { label: "编解码", href: "/encoding", icon: Binary },
   { label: "二维码", href: "/qrcode-tool", icon: QrCode },
+  { label: "JSON 格式化", href: "/json-formatter", icon: Braces },
+  { label: "图片压缩", href: "/image-compress", icon: ImageDown },
+  { label: "时间戳转换", href: "/timestamp", icon: Clock },
 ]
 
 export function TopNavbar() {

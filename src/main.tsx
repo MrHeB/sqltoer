@@ -89,6 +89,27 @@ const router = createBrowserRouter([
           return { Component: QrcodeToolPage }
         },
       },
+      {
+        path: "json-formatter",
+        lazy: async () => {
+          const { JsonFormatterPage } = await import("./routes/json-formatter")
+          return { Component: JsonFormatterPage }
+        },
+      },
+      {
+        path: "image-compress",
+        lazy: async () => {
+          const { ImageCompressPage } = await import("./routes/image-compress")
+          return { Component: ImageCompressPage }
+        },
+      },
+      {
+        path: "timestamp",
+        lazy: async () => {
+          const { TimestampPage } = await import("./routes/timestamp")
+          return { Component: TimestampPage }
+        },
+      },
     ],
   },
 ])

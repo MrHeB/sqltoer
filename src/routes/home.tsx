@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { GitBranch, Droplets, Eraser, Camera, ArrowRight, Palette, Binary, Send, FileStack, Database, QrCode } from "lucide-react"
+import { GitBranch, Droplets, Eraser, Camera, ArrowRight, Palette, Binary, Send, FileStack, Database, QrCode, Braces, ImageDown, Clock } from "lucide-react"
 
 const tools = [
   {
@@ -61,6 +61,24 @@ const tools = [
     description: "QR 码生成与扫码、条形码、批量生成、Logo 嵌入",
     href: "/qrcode-tool",
     icon: QrCode,
+  },
+  {
+    title: "JSON 格式化",
+    description: "JSON 格式化、压缩、Key 排序、语法校验与错误提示",
+    href: "/json-formatter",
+    icon: Braces,
+  },
+  {
+    title: "图片压缩",
+    description: "在线压缩图片大小，支持 JPG/PNG/WebP，可调质量",
+    href: "/image-compress",
+    icon: ImageDown,
+  },
+  {
+    title: "时间戳转换",
+    description: "时间戳与日期互转、多时区显示、实时时间戳",
+    href: "/timestamp",
+    icon: Clock,
   },
 ]
 
