@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom"
 import { TopNavbar } from "@/components/TopNavbar"
+import { SiteFooter } from "@/components/SiteFooter"
 import { useAdSenseRefresh } from "@/components/AdBanner"
 
 export function RootLayout() {
@@ -11,6 +12,7 @@ export function RootLayout() {
       <div className="flex-1 overflow-hidden">
         <Outlet />
       </div>
+      <SiteFooter />
     </div>
   )
 }
